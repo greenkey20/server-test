@@ -14,6 +14,9 @@ public class Report {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reportId;
 
+    @Enumerated(EnumType.STRING)
+    private ReportType reportType;
+
     @ManyToOne
     @JoinColumn(name = "habitId")
     private Habit habit;
@@ -36,5 +39,23 @@ public class Report {
 
     public Long getReviewId() {
         return this.review.getReviewId();
+    }
+
+    public enum ReportType {
+        HATEFUL(1, "욕설"),
+        SEXUAL(2, "선정적"),
+        SPAM(3, "광고"),
+        VIOLENT(4, "폭력적");
+
+        @Getter
+        private Integer typeNumber;
+
+        @Getter
+        private String description;
+
+        ReportType(Integer typeNumber, String description) {
+            this.typeNumber = typeNumber;
+            this.description = description;
+        }
     }
 }

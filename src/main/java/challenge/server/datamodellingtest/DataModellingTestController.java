@@ -1,9 +1,11 @@
 package challenge.server.datamodellingtest;
 
+import challenge.server.datamodellingtest.dto.ReportDto;
 import challenge.server.datamodellingtest.entity.Habit;
 import challenge.server.datamodellingtest.entity.Report;
 import challenge.server.datamodellingtest.entity.Review;
 import challenge.server.datamodellingtest.mapper.HabitMapper;
+import challenge.server.datamodellingtest.mapper.ReportMapper;
 import challenge.server.datamodellingtest.mapper.ReviewMapper;
 import challenge.server.datamodellingtest.repository.DataModellingTestHabitRepository;
 import challenge.server.datamodellingtest.repository.DataModellingTestReportRepository;
@@ -32,6 +34,7 @@ public class DataModellingTestController {
 
     private final HabitMapper habitMapper;
     private final ReviewMapper reviewMapper;
+    private final ReportMapper reportMapper;
 
     private final DataModellingTestHabitRepository habitRepository;
     private final DataModellingTestReviewRepository reviewRepository;
@@ -75,15 +78,31 @@ public class DataModellingTestController {
     public ResponseEntity getReports() {
         Page<Report> pageReports = reportRepository.findAll(PageRequest.of(0, 1000, Sort.by("reportId").descending()));
         List<Report> reports = pageReports.getContent();
-        return new ResponseEntity(reports, HttpStatus.OK);
+        return new ResponseEntity(reportMapper.reportsToReportResponses(reports), HttpStatus.OK);
     }
 
-    // 습관에서 발생한 모든 신고 유형 조회
+    // 습관에서 발생한 모든 신고 조회
     @GetMapping("/reports/habits")
     public ResponseEntity getHabitReports() {
         Page<Report> pageReports = reportRepository.findAllByHabitNotNull(PageRequest.of(0, 1000, Sort.by("reportId").descending()));
         List<Report> reports = pageReports.getContent();
-        return new ResponseEntity(reports, HttpStatus.OK);
+        return new ResponseEntity(reportMapper.reportsToReportResponses(reports), HttpStatus.OK);
+    }
+
+    // 2023.1.7(토) 추가 = 습관에서 발생한 특정 신고 유형별 개수 조회
+    @GetMapping("/report/habits")
+    public ResponseEntity getCountOfHabitReportsByTypes(@RequestParam("reportType") String reportType) {
+        Long count = reportRepository.countAllByHabitNotNullAndAndReportTypeIsLike(reportType);
+        /* select count(*)
+        from habit
+        where habit not null
+        group by report_type
+
+        reportType = HATEFUL, SEXUAL, SPAM, VIOLENT
+         */
+//        List<Report> reports = pageReports.getContent();
+//        return new ResponseEntity(reportMapper.reportsToReportResponses(reports), HttpStatus.OK);
+        return new ResponseEntity(new ReportDto.CountResponse(reportType, count), HttpStatus.OK);
     }
 
     // 인증에서 발생한 모든 신고 유형 조회
@@ -91,7 +110,7 @@ public class DataModellingTestController {
     public ResponseEntity getAuthReports() {
         Page<Report> pageReports = reportRepository.findAllByAuthNotNull(PageRequest.of(0, 1000, Sort.by("reportId").descending()));
         List<Report> reports = pageReports.getContent();
-        return new ResponseEntity(reports, HttpStatus.OK);
+        return new ResponseEntity(reportMapper.reportsToReportResponses(reports), HttpStatus.OK);
     }
 
     // 누적 신고 5회 시 회원 정지
